@@ -1,0 +1,16 @@
+# Python
+backend/venv/
+backend/__pycache__/
+backend/**/*.pyc
+backend/db.sqlite3
+
+# Node / React
+frontend/node_modules/
+frontend/build/
+
+# macOS
+.DS_Store
+
+# Env / secrets
+.env
+*.env
