@@ -2,9 +2,6 @@
 
 A full-stack AI-powered real-estate analysis chatbot built using **Django**, **React**, **Pandas**, **Recharts**, and **OpenAI**.
 
-This project was developed as a complete solution to the **Sigmavalue Full-Stack Developer Assignment 2025**.  
-All requirements listed in the assignment PDF have been fully implemented and satisfied.
-
 ---
 
 ## ⭐ Features
@@ -12,9 +9,9 @@ All requirements listed in the assignment PDF have been fully implemented and sa
 ### 🔹 1. Chat-based Query Interface  
 Users can type natural-language queries about Pune localities, such as:
 
-- “Give me analysis of Wakad”  
-- “Compare Ambegaon Budruk and Aundh demand trends”  
-- “Which locality has higher demand between Ambegaon Budruk and Wakad?”
+- "Give me analysis of Wakad"  
+- "Compare Ambegaon Budruk and Aundh demand trends"  
+- "Which locality has higher demand between Ambegaon Budruk and Wakad?"
 
 ---
 
@@ -77,7 +74,7 @@ These images are located in the `/Image` folder inside the project.
 ---
 
 ### **📌 Filtered Dataset (After Downloading CSV)**
-![Filtered Dataset](Image/Filtered%20dataset%20After%20Downloading%20CSV.png)
+![Filtered Dataset](Image/Filtered%20dataset%20After%20Downloading%20CSV%20.png)
 
 ---
 
@@ -85,7 +82,7 @@ These images are located in the `/Image` folder inside the project.
 
 ### 1️⃣ Backend (Django)
 
-```
+```bash
 cd backend
 python3 -m venv venv
 source venv/bin/activate
@@ -100,7 +97,7 @@ python3 manage.py runserver
 
 ### 2️⃣ Frontend (React)
 
-```
+```bash
 cd frontend
 npm install
 npm start
@@ -110,7 +107,7 @@ npm start
 
 ## 📦 Project Structure
 
-```
+```text
 realestate_chatbot_pro/
 │
 ├── backend/
@@ -128,17 +125,17 @@ realestate_chatbot_pro/
 
 ---
 
-## ✔️ Assignment Requirement Checklist
+## ✔️ Feature Checklist
 
-| Requirement from PDF | Completed |
-|-----------------------|-----------|
+| Feature | Implemented |
+|--------|-------------|
 | Chat UI | ✅ |
 | Query Parsing | ✅ |
 | Excel Processing | ✅ |
 | Insight Summary | ✅ |
 | Trend Chart | ✅ |
 | Filtered Table | ✅ |
-| Bonus: CSV Download | ✅ |
-| Bonus: LLM Integration | ✅ |
+| CSV Download | ✅ |
+| LLM Integration | ✅ |
 
 ---
