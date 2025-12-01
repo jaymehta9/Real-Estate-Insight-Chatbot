@@ -4,6 +4,11 @@ A full-stack AI-powered real-estate analysis chatbot built using **Django**, **R
 
 ---
 
+## 🌐 Live Website  
+👉 **https://real-estate-insight-frontend.onrender.com**
+
+---
+
 ## ⭐ Features
 
 ### 🔹 1. Chat-based Query Interface  
@@ -54,26 +59,19 @@ Displays all relevant Excel rows for the query, with:
 
 ---
 
-## 📸 Screenshots
+## 📸 Screenshots  
+Images located in the `/Image` folder.
 
-These images are located in the `/Image` folder inside the project.
-
-### **📌 Dashboard View**
+### 📌 Dashboard View  
 ![Dashboard](Image/Dashboard.png)
 
----
-
-### **📌 Example Query: “Give me analysis of Wakad”**
+### 📌 Example Query: “Give me analysis of Wakad”  
 ![Wakad Analysis](Image/Give%20me%20analysis%20of%20Wakad.png)
 
----
-
-### **📌 Example: “Which locality has higher demand between Ambegaon Budruk and Wakad?”**
+### 📌 Locality Comparison  
 ![Comparison](Image/Which%20locality%20has%20higher%20demand%20between%20Ambegaon%20Budruk%20and%20Wakad.png)
 
----
-
-### **📌 Filtered Dataset (After Downloading CSV)**
+### 📌 Filtered Dataset  
 ![Filtered Dataset](Image/Filtered%20dataset%20After%20Downloading%20CSV%20.png)
 
 ---
@@ -107,7 +105,7 @@ npm start
 
 ## 📦 Project Structure
 
-```text
+```
 realestate_chatbot_pro/
 │
 ├── backend/
@@ -137,5 +135,7 @@ realestate_chatbot_pro/
 | Filtered Table | ✅ |
 | CSV Download | ✅ |
 | LLM Integration | ✅ |
+| **Live Website** | **✅ https://real-estate-insight-frontend.onrender.com** |
 
 ---
+
