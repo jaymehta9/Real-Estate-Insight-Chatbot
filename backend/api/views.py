@@ -1,32 +1,125 @@
 import json
-import math
+import os
+from pathlib import Path
 
+import pandas as pd
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 
-from .utils import (
-    load_data,
-    extract_areas_from_query,
-    build_chart_data,
-    build_llm_summary,
-    build_rule_summary,
-    AREA_COL,
-    YEAR_COL,
-)
+from openai import OpenAI
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+DATA_PATH = BASE_DIR / "sample_data.xlsx"
+
+df = pd.read_excel(DATA_PATH)
+
+client = None
+api_key = os.environ.get("OPENAI_API_KEY")
+if api_key:
+    client = OpenAI(api_key=api_key)
 
 
-def _clean_value(v):
-    if v is None:
+def build_chart_and_table(localities):
+    filtered = df[df["final location"].isin(localities)].copy()
+
+    yearly = (
+        filtered.groupby(["final location", "year"])
+        .agg(
+            avg_price=("avg_price - igr", "mean"),
+            avg_demand=("total_sold - igr", "mean"),
+        )
+        .reset_index()
+        .sort_values(["final location", "year"])
+    )
+
+    chart = []
+    for loc in localities:
+        loc_data = yearly[yearly["final location"] == loc]
+        chart.append(
+            {
+                "location": loc,
+                "points": [
+                    {
+                        "year": int(row["year"]),
+                        "price": float(row["avg_price"]),
+                        "demand": float(row["avg_demand"]),
+                    }
+                    for _, row in loc_data.iterrows()
+                ],
+            }
+        )
+
+    table_rows = filtered.to_dict(orient="records")
+
+    return chart, table_rows
+
+
+def build_rule_based_summary(localities, chart):
+    parts = []
+    for series in chart:
+        loc = series["location"]
+        pts = series["points"]
+        if not pts:
+            continue
+        start = pts[0]
+        end = pts[-1]
+        price_change = ((end["price"] - start["price"]) / start["price"]) * 100 if start["price"] else 0
+        demand_change = (
+            ((end["demand"] - start["demand"]) / start["demand"]) * 100
+            if start["demand"]
+            else 0
+        )
+        parts.append(
+            f"{loc} shows an average price of ~{end['price']:.0f} in {end['year']} "
+            f"with an approximate price change of {price_change:.1f}% and "
+            f"demand change of {demand_change:.1f}% over the selected years."
+        )
+
+    if not parts:
+        return "No matching data was found for the requested localities."
+
+    return " ".join(parts)
+
+
+def build_llm_summary(query, localities, chart, table_rows):
+    if client is None:
         return None
-    if isinstance(v, float):
-        if math.isnan(v) or math.isinf(v):
-            return None
+
     try:
-        if hasattr(v, "item"):
-            v = v.item()
+        years = sorted({p["year"] for series in chart for p in series["points"]})
+        prompt = f"""
+You are an analyst for the Pune real estate market.
+
+User query:
+{query}
+
+Localities:
+{", ".join(localities)}
+
+Years covered:
+{", ".join(str(y) for y in years)}
+
+You are given structured data about price and demand trends for these localities.
+Write a concise, professional summary (max 5–7 sentences) covering:
+
+- Overall price trend for each locality
+- Relative demand between the localities
+- Any notable changes over the years
+- A short, practical insight a buyer or investor might care about
+
+Avoid bullet points. Respond in plain English.
+"""
+
+        resp = client.responses.create(
+            model="gpt-4.1-mini",
+            input=prompt,
+            max_output_tokens=300,
+        )
+
+        text = resp.output[0].content[0].text
+        return text.strip()
     except Exception:
-        pass
-    return v
+        return None
 
 
 @csrf_exempt
@@ -35,54 +128,34 @@ def query_view(request):
         return JsonResponse({"error": "Only POST allowed"}, status=405)
 
     try:
-        payload = json.loads(request.body.decode("utf-8"))
-    except Exception:
-        payload = {}
+        body = json.loads(request.body.decode("utf-8"))
+        query = (body.get("query") or "").strip()
+        if not query:
+            return JsonResponse({"error": "Query is required"}, status=400)
 
-    query = payload.get("query", "")
-    if not query:
-        return JsonResponse({"error": "Query is required"}, status=400)
+        keywords = [
+            "Ambegaon Budruk",
+            "Aundh",
+            "Wakad",
+            "Akurdi",
+        ]
+        localities = [loc for loc in keywords if loc.lower() in query.lower()]
+        if not localities:
+            localities = ["Ambegaon Budruk"]
 
-    df = load_data()
+        chart, table_rows = build_chart_and_table(localities)
 
-    if AREA_COL not in df.columns or YEAR_COL not in df.columns:
-        return JsonResponse(
-            {"error": "Dataset does not have required columns"}, status=500
-        )
+        summary = build_llm_summary(query, localities, chart, table_rows)
+        if summary is None:
+            summary = build_rule_based_summary(localities, chart)
 
-    areas_in_data = df[AREA_COL].dropna().unique()
-    selected_areas = extract_areas_from_query(query, areas_in_data)
-
-    if not selected_areas:
-        return JsonResponse(
-            {"error": "No matching localities found in dataset"}, status=404
-        )
-
-    filtered = df[df[AREA_COL].isin(selected_areas)]
-
-    llm_summary = build_llm_summary(query, selected_areas, filtered)
-    if llm_summary:
-        summary_text = llm_summary
-    else:
-        parts = []
-        for area in selected_areas:
-            area_df = filtered[filtered[AREA_COL] == area]
-            parts.append(build_rule_summary(area, area_df))
-        summary_text = " ".join(parts)
-
-    chart = build_chart_data(filtered, selected_areas)
-
-    table = []
-    for _, row in filtered.iterrows():
-        raw = row.to_dict()
-        clean_row = {k: _clean_value(v) for k, v in raw.items()}
-        table.append(clean_row)
-
-    response = {
-        "query": query,
-        "areas": list(selected_areas),
-        "summary": summary_text,
-        "chart": chart,
-        "table": table,
-    }
-    return JsonResponse(response)
+        payload = {
+            "query": query,
+            "areas": localities,
+            "summary": summary,
+            "chart": chart,
+            "table": table_rows,
+        }
+        return JsonResponse(payload)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
